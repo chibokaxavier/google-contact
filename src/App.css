@@ -1,0 +1,40 @@
+@tailwind base;
+
+@tailwind components;
+
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Product-Sans';
+  src: url('./assets/product-sans/ProductSansRegular.ttf');
+}
+
+@font-face {
+  font-family: 'Product-Sans-Bold';
+  src: url('./assets/product-sans/ProductSansBold.ttf');
+}
+
+@layer base {
+  html {
+    font-family: 'Product-Sans';
+    @apply text-gray-google;
+  }
+}
+
+.rounded-force{
+  @apply rounded-xl !important;
+}
+
+.come-from-left{
+  animation-name: left-in;
+  animation-duration: 1s;
+}
+
+@keyframes left-in {
+  0%{
+    margin-left: -400px;
+  }
+  100%{
+    margin-left: 0px;
+  }
+}
