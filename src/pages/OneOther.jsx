@@ -1,9 +1,8 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { contactService } from "../services/Contacts.service";
+import { contactService } from "../services/contacts.service";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
-
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 
 function OneOther() {
   let { bookId } = useParams();
@@ -19,7 +18,7 @@ function OneOther() {
               width="20"
               height="20"
               viewBox="0 0 24 24"
-              // class="NSy2Hd cdByRd RTiFqe undefined"
+              // className="NSy2Hd cdByRd RTiFqe undefined"
               className="mt-4 ml-2"
             >
               <path fill="none" d="M0 0h24v24H0V0z"></path>
@@ -36,7 +35,6 @@ function OneOther() {
               width="20"
               height="20"
               viewBox="0 0 24 24"
-              class="NSy2Hd cdByRd RTiFqe undefined"
               className="opacity-70"
             >
               <path fill="none" d="M0 0h24v24H0V0z"></path>
@@ -51,14 +49,13 @@ function OneOther() {
         <div className="w-[500px] h-[95px] border-2 rounded-md p-3">
           <span className="font-semibold">Contact Details</span>
           <div className="flex pt-2">
-          <EmailOutlinedIcon className="mr-3"/>
-         
+            <EmailOutlinedIcon className="mr-3" />
+
             <div className="mb-2">
               <a href="#" className="text-blue-600 pb-4 text-sm">
                 {" "}
                 {contact.email}{" "}
               </a>
-              
             </div>
           </div>
         </div>

@@ -1,9 +1,10 @@
 import React from "react";
-import { contactService } from "../services/Contacts.service";
+import { contactService } from "../services/contacts.service";
 import { NavLink } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import Button from "@mui/material/Button";
+import { useSelector } from "react-redux";
 
 const style = {
   position: "absolute",
@@ -13,7 +14,7 @@ const style = {
   width: 400,
   bgcolor: "background.paper",
   border: "",
-  
+
   height: 0,
   boxShadow: 24,
   pt: 0,
@@ -22,6 +23,7 @@ const style = {
 };
 
 function Other() {
+  const contacts = useSelector((state) => state.contacts.value);
   const [infoopen, setInfoOpen] = React.useState(false);
   const handleInfoOpen = () => {
     setInfoOpen(true);
@@ -46,7 +48,7 @@ function Other() {
               width="18"
               height="18"
               viewBox="0 0 24 24"
-              //   class="NSy2Hd cdByRd RTiFqe undefined"
+              //   className="NSy2Hd cdByRd RTiFqe undefined"
               className="ml-2 opacity-50 cursor-pointer "
               onMouseOver={handleInfoOpen}
             >
@@ -55,14 +57,14 @@ function Other() {
             </svg>
           </div>
 
-          {contactService.getContacts().map((contact) => (
+          {contacts.map((contact) => (
             <div
               key={contact.id}
               className="py-3 gap-6  grid grid-cols-4 hover:bg-gray-200  relative"
             >
               <div className="flex gap-2">
                 <img src={contact.image} className="w-10 h-10 rounded-full" />
-                <div className="">{contact.name}</div>
+                <div className="">{contact.firstName}</div>
               </div>
               <div className="">{contact.email}</div>
               <NavLink
@@ -89,7 +91,7 @@ function Other() {
           </p>
           {/* <Input placeholder="" className="mt-8 ml-9 w-[300px]" /> */}
           <div className="flex justify-end text-blue-400 mt">
-             <button className=" mr-9 bg-white w-20 h-8 rounded  text-sm  hover:bg-gray-100">
+            <button className=" mr-9 bg-white w-20 h-8 rounded  text-sm  hover:bg-gray-100">
               Learn More
             </button>
           </div>

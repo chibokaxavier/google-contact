@@ -1,8 +1,14 @@
 import React from "react";
-import { contactService } from "../services/Contacts.service";
+import { contactService } from "../services/contacts.service";
 import { NavLink } from "react-router-dom";
+import { useSelector } from "react-redux";
+
 
 export function Trash() {
+  const contacts = useSelector((state) => state.contacts.value);
+  const d = new Date();
+
+
   return (
     <>
       <div className="w-[99%] h-[55px] bg-gray-100 pl-0 rounded-lg flex justify-center text-sm">
@@ -24,22 +30,22 @@ export function Trash() {
           <div className="">
             <div className="text-[11px] mt-5 mb-3">
               <span className="text-[11px]">TRASH</span> (
-              {contactService.getContacts().length})
+              {contacts.length})
             </div>
 
-            {contactService.getContacts().map((contact) => (
+            {contacts.map((contact) => (
               <div
                 key={contact.id}
                 className="py-3 gap-6  grid grid-cols-3 hover:bg-gray-200  relative"
               >
                 <div className="flex gap-2">
                   <img src={contact.image} className="w-10 h-10 rounded-full" />
-                  <div className="">{contact.name}</div>
+                  <div className="">{contact.firstName}</div>
                 </div>
                 <div>
                   <p>Deleted on Ios Device</p>
                 </div>
-                <div className="">{contact.date.toDateString()}</div>
+                <div className="">jul 24</div>
                 <NavLink
                   className="absolute w-full h-full left-0 top-0 z-1"
                   to={`/Trash/${contact.id}`}

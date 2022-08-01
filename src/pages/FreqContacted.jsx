@@ -1,8 +1,12 @@
 import React from "react";
-import { contactService } from "../services/Contacts.service";
+import { contactService } from "../services/contacts.service";
 import { NavLink } from "react-router-dom";
-import { FreqcontactService } from "../services/FreqContacts.service";
+import { FreqcontactService } from "../services/freqContacts.service";
+import { useSelector } from "react-redux";
+
+
 export function FreqContacted() {
+  const contacts = useSelector((state) => state.contacts.value);
   return (
     <div className="text-sm pl-6 ">
       <div className=" ">
@@ -20,11 +24,11 @@ export function FreqContacted() {
 
         </div>
 
-        {FreqcontactService.getFreqContacts().map((contact) => (
+        {contacts.map((contact) => (
           <div key={contact.id} className="py-3  gap-6 grid grid-cols-4 hover:bg-gray-200  relative">
             <div className="flex gap-2">
-              <img src={contact.image} className="w-10 h-10 rounded-full" />
-              <div className="">{contact.name}</div>
+              {/* <img src={contact.image} className="w-10 h-10 rounded-full" /> */}
+              <div className="">{contact.firstName}</div>
             </div>
             
             <div className="">{contact.email}</div>

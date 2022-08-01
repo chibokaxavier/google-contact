@@ -4,6 +4,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import Input from "@mui/material/Input";
+import { useNavigate } from "react-router-dom";
 import SearchIcon from "@mui/icons-material/Search";
 import Tooltip from "@mui/material/Tooltip";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -12,18 +13,42 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import AppsRoundedIcon from "@mui/icons-material/AppsRounded";
 import CloseIcon from "@mui/icons-material/Close";
+import { NavLink } from "react-router-dom";
 import { SidebarContext } from "../../context/Sidebar";
-import { useSelector } from "react-redux";
-
+import { useDispatch, useSelector } from "react-redux";
+import { getLabels } from "../../store/slices/label.slice";
+import { getContacts } from "../../store/slices/contacts.slice";
+import { authService } from "../../services/auth.service";
+import { setAuth, setLoggedIn } from "../../store/slices/auth.slice";
 export default function AppHeader() {
+  const dispatch = useDispatch();
   const [showsearch, setShowSearch] = useState(false);
   const [search, setSearch] = useState("");
-  const count = useSelector((state) => state.counter.value);
+  const logged_in = useSelector((state) => state.authentication.logged_in);
+  const user = useSelector((state) => state.authentication.user);
   const stopClickOutside = () => {
     document
       .querySelector("body")
       .removeEventListener("click", handleClickOutside);
   };
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    authService.listenForAuthChange({
+      login(param) {
+        dispatch(setAuth(param));
+        dispatch(setLoggedIn(true));
+        dispatch(getContacts(param.uid));
+        dispatch(getLabels(param.uid));
+        navigate("/");
+      },
+      logout: () => {
+        dispatch(setLoggedIn(false));
+        navigate("/LogInPage");
+      },
+    });
+  }, []);
   useEffect(() => {
     document
       .querySelector("body")
@@ -82,7 +107,7 @@ export default function AppHeader() {
             </IconButton>
           </div>
           <div>
-            <a href="/">
+            <NavLink to="/">
               <div className="flex gap-2">
                 <img
                   src="https://www.gstatic.com/images/branding/product/1x/contacts_48dp.png"
@@ -92,7 +117,7 @@ export default function AppHeader() {
                   Contacts
                 </div>
               </div>
-            </a>
+            </NavLink>
           </div>
         </div>
         {/* <div className="text-xl">{count}</div> */}
@@ -191,13 +216,24 @@ export default function AppHeader() {
                   </IconButton>
                 </Tooltip>
               </div>
-              <div className="ml">
-                <Tooltip title="GOOGLE ACCOUNT" placement="bottom">
-                  <IconButton aria-label="menu">
-                    <MenuIcon />
-                  </IconButton>
-                </Tooltip>
-              </div>
+              {logged_in && (
+                <div className="ml">
+                  <Tooltip
+                    title={`
+                  CONTACT ACCOUNT \n
+                  ${user.email}
+                  ${user.displayName}
+                  `}
+                    placement="bottom"
+                  >
+                    <IconButton aria-label="menu">
+                      <div className="rounded-full font-bold uppercase text-sm bg-blue-500 text-white w-8 h-8 items-center flex justify-center text-center">
+                        {user.displayName[0]}
+                      </div>
+                    </IconButton>
+                  </Tooltip>
+                </div>
+              )}
             </div>
           </div>
         </div>
