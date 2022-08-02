@@ -18,7 +18,7 @@ class LabelService {
       const docRef = await addDoc(collection(db, `users/${uid}/labels`), {
         name: label.title,
       });
-      console.log("Document written with ID: ", docRef.id);
+      console.log("Document written with ID: ", docRef.id, label.title);
     } catch (e) {
       console.error("Error adding document: ", e);
     }

@@ -42,7 +42,7 @@ const style = {
 
 function Createcontact() {
   const [labelid,setLabelid] = useState([])
-
+  const [newLabelid,setnewLabelid] = useState([])
   const labelList = useSelector((state) => state.labelList.value);
   const [Labelopen, setLabelOpen] = React.useState(false);
   const handleLabelOpen = () => {
@@ -134,8 +134,10 @@ function Createcontact() {
     });
   };
 
-  const manageLabels=(e)=>{
-    set
+  const manageLabels=()=>{
+    setnewLabelid([...labelid,user.uid])
+
+    console.log(newLabelid,"");
   }
 
   //
@@ -400,7 +402,7 @@ function Createcontact() {
                       </svg>
                     </div>
 
-                    <div className="ml-7"> {name}</div>
+                    <div className="ml-7" onClick={manageLabels}> {name}</div>
                   </div>
                 {/* </NavLink> */}
               </div>
