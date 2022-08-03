@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
+import Cookies from "js-cookie";
 import { collection, addDoc, getDocs, setDoc, doc } from "firebase/firestore";
 import { db } from "../firebase/index";
 class AuthService {
@@ -13,7 +14,6 @@ class AuthService {
     this.navigator = null;
   }
   async signup(email, password, name) {
-    console.log("got here");
     const auth = getAuth();
     createUserWithEmailAndPassword(auth, email, password)
       .then(async (cred) => {
@@ -23,6 +23,18 @@ class AuthService {
         await setDoc(doc(db, `users`, cred.user.uid), {
           name,
         });
+        let user = cred.user;
+        Cookies.set(
+          "auth",
+           JSON.stringify({
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+          }),
+          {
+            expires: 2,
+          }
+        );
       })
       .catch((err) => {
         console.log(err.message);
@@ -32,7 +44,17 @@ class AuthService {
     const auth = getAuth();
     signInWithEmailAndPassword(auth, email, password)
       .then((cred) => {
-        console.log("natural login");
+        Cookies.set(
+          "auth",
+           JSON.stringify({
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+          }),
+          {
+            expires: 2,
+          }
+        );
         let user = cred.user;
         callback({
           uid: user.uid,
@@ -60,6 +82,17 @@ class AuthService {
     const auth = getAuth();
     onAuthStateChanged(auth, (user) => {
       if (user) {
+        Cookies.set(
+          "auth",
+           JSON.stringify({
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+          }),
+          {
+            expires: 2,
+          }
+        );
         funcs.login({
           uid: user.uid,
           displayName: user.displayName || "e",

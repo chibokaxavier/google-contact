@@ -1,18 +1,26 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { contactService } from "../services/contacts.service";
-import { useSelector } from "react-redux";
-
+import { useSelector, useDispatch } from "react-redux";
 
 function OneContact() {
-  const contact = useSelector((state) => state.contacts.value);
-  let { bookId } = useParams();
-  // let contact = contactService.getContact(bookId);
+  const uid = useSelector((state) => state.authentication.user.uid);
+  const labels = useSelector((state) => state.labelList.value);
+  const [contact, setContact] = useState({});
+  let { contact_id } = useParams();
+  useEffect(() => {
+    contactService.getContact(uid, contact_id).then((data) => {
+      data.labels = data.labels.map((y) => labels.find((x) => x.id == y));
+      setContact(data);
+    });
+  }, []);
+
+  //  let contact = contactService.getContact(bookId);
   return (
     <div className="relative">
       <div className="flex pb-8">
         <div className="flex relative pl-10 pt-10">
-          <img src={contact.image} className="w-40  h-40 rounded-full" />
+          {/* <img src={contact.image} className="w-40  h-40 rounded-full" /> */}
           <div className="text-3xl pt-10 pl-5 ">
             {contact.firstName}
             <svg
@@ -65,7 +73,6 @@ function OneContact() {
               width="20"
               height="20"
               viewBox="0 0 24 24"
-        
               className="mr-3 mt-1"
             >
               <path fill="none" d="M0 0h24v24H0V0z"></path>
@@ -73,7 +80,6 @@ function OneContact() {
             </svg>
             <div className="mb-2">
               <a href="#" className="text-blue-600 pb-4 text-sm">
-              
                 {contact.phone}
               </a>
               . Mobile

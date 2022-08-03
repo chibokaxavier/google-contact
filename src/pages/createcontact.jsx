@@ -15,7 +15,7 @@ import Modal from "@mui/material/Modal";
 import Input from "@mui/material/Input";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink } from "react-router-dom";
-import { getContacts } from "./../store/slices/contacts.slice";
+import { getContacts } from "../store/slices/contacts.slice";
 import { open, setMessage } from "../store/slices/snackbar.slice";
 // import OutlinedInput from "@mui/material/OutlinedInput";
 // import InputLabel from "@mui/material/InputLabel";
@@ -32,7 +32,7 @@ const style = {
   transform: "translate(-50%, -50%)",
   width: 400,
   bgcolor: "background.paper",
-  borderRadius: "9px",
+  borderRadius: 0,
   height: 0,
   boxShadow: 24,
   pt: 0,
@@ -41,8 +41,8 @@ const style = {
 };
 
 function Createcontact() {
-  const [labelid,setLabelid] = useState([])
-  const [newLabelid,setnewLabelid] = useState([])
+  const [selectedLabels, setSelectedLabels] = useState([]);
+  const [appliedLabels, setAppliedLabels] = useState([]);
   const labelList = useSelector((state) => state.labelList.value);
   const [Labelopen, setLabelOpen] = React.useState(false);
   const handleLabelOpen = () => {
@@ -65,12 +65,17 @@ function Createcontact() {
   });
   const inputFileRef = useRef();
   const imageRef = useRef();
-  const user = useSelector((state)=> state.authentication.user)
+  const user = useSelector((state) => state.authentication.user);
+  const LabelUser = useSelector((state) => state.labelList.value);
   const handleSubmit = async (e) => {
-    await contactService.create(newContact, user.uid);
+    await contactService.create(
+      { ...newContact, labels: appliedLabels.map((x) => x.id) },
+      user.uid
+    );
     dispatch(setMessage("Contact Created Successfully"));
     dispatch(open());
-    dispatch(getContacts( user.uid));
+    dispatch(getContacts(user.uid));
+    dispatch(getLabels(user.uid));
     setNewContact({
       firstName: "",
       lastName: "",
@@ -87,7 +92,7 @@ function Createcontact() {
       var imageFile = event.target.files[0];
       var reader = new FileReader();
       reader.onload = function (e) {
-        imageRef.current.src = e.target.result
+        imageRef.current.src = e.target.result;
       };
       reader.readAsDataURL(imageFile);
     }
@@ -95,8 +100,7 @@ function Createcontact() {
   const clearInput = () => {
     setNewContact({
       firstName: "",
-      lastName: ""
-     
+      lastName: "",
     });
   };
   const clearCompanyInput = () => {
@@ -133,14 +137,20 @@ function Createcontact() {
       [event.target.name]: event.target.value,
     });
   };
-
-  const manageLabels=()=>{
-    setnewLabelid([...labelid,user.uid])
-
-    console.log(newLabelid,"");
-  }
-
-  //
+  const manageLabels = (id) => {
+    let label_exists = selectedLabels.includes(id);
+    if (label_exists) {
+      // del label
+      setSelectedLabels(selectedLabels.filter((x) => x != id));
+      return;
+    }
+    setSelectedLabels([...selectedLabels, id]);
+  };
+  const applyLabels = () => {
+    setAppliedLabels(
+      selectedLabels.map((x) => LabelUser.find((label) => label.id == x))
+    );
+  };
   return (
     <>
       <div className="pt-5 cursor-pointer " onClick={closeNew}>
@@ -150,7 +160,11 @@ function Createcontact() {
         <div className="mb-30">
           <div className="flex relative">
             {/* <AccountCircleOutlinedIcon className="h-40 w-40" /> */}
-            <img ref={imageRef} src="/img.png" className="w-40 h-44 rounded-full opacity-20" />
+            <img
+              ref={imageRef}
+              src="/img.png"
+              className="w-40 h-44 rounded-full opacity-20"
+            />
             <div className="w-12 h-12 bg-gray-400 absolute left-14 top-20  rounded-full cursor-pointer">
               <input
                 type="file"
@@ -171,16 +185,22 @@ function Createcontact() {
                 <path d="M20 10h-2V7h-3V5h3V2h2v3h3v2h-3v3zm-4 3c0 2.21-1.79 4-4 4s-4-1.79-4-4 1.79-4 4-4 4 1.79 4 4zm4-1v7H4V7h9V3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-7h-2z"></path>
               </svg>
             </div>
+            <div className="ml-10 flex">
+            {appliedLabels.map((lab) => (
+              <div key={lab.id} className="mt-24 ml-2 rounded-[12px] h-7 px-2  border border-gray-400 cursor-pointer">{lab.name}</div>
+            ))}
+            </div>
             <svg
               width="20"
               height="20"
               viewBox="0 0 24 24"
-              className="ml-10 opacity-70 mt-24 cursor-pointer"
+              className="ml-4  mt-[100px] cursor-pointer stroke-blue-500  "
               onClick={handleLabelOpen}
             >
-              <path fill="none" d="M0 0h24v24H0V0z"></path>
+              <path fill="white" d="M0 0h24v24H0V0z"></path>
               <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"></path>
             </svg>
+           
           </div>
           <button
             className="bg-blue-500 text-white h-8 w-20 ml-[900px] mb-7 rounded-md"
@@ -376,7 +396,7 @@ function Createcontact() {
       >
         <Box sx={{ ...style, width: 300, height: 300, pt: 2 }}>
           <h2 id="parent-modal-title"></h2>
-          <p id="parent-modal-description" className="pl-5"></p>
+          <p id="parent-modal-description" className="pl-7 pb-5 text-sm">Manage Labels</p>
           {labelList.map((item) => {
             const { name, id } = item;
             return (
@@ -389,25 +409,55 @@ function Createcontact() {
                     } transition-all duration-1000`
                   }
                 > */}
-                  <div className="flex">
-                    <div>
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        className="ml-1 opacity-70"
-                      >
-                        <path fill="none" d="M0 0h24v24H0V0z"></path>
-                        <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"></path>
-                      </svg>
-                    </div>
-
-                    <div className="ml-7" onClick={manageLabels}> {name}</div>
+                <div className="flex" onClick={() => manageLabels(id)}>
+                  <div>
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      className="ml-1 opacity-70"
+                    >
+                      <path fill="none" d="M0 0h24v24H0V0z"></path>
+                      <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"></path>
+                    </svg>
                   </div>
+
+                  <div className="ml-7">{name}</div>
+                  {selectedLabels.includes(id) && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 stroke-blue-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </div>
                 {/* </NavLink> */}
               </div>
             );
           })}
+          <hr />
+          {selectedLabels.length != appliedLabels.length ? (
+            <div
+              onClick={() => {
+                applyLabels();
+                handleLabelClose();
+              }}
+              className="cursor-pointer"
+            >
+            <span className="ml-7 pt-4">Apply</span>  
+            </div>
+          ) : (
+            <div className="cursor-pointer" > <span className="ml-7 pt-4 h-10 w-10">+</span><span className="ml-7 pt-4">Create Label</span> </div>
+          )}
         </Box>
       </Modal>
       ;

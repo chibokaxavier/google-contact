@@ -4,7 +4,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import Input from "@mui/material/Input";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import SearchIcon from "@mui/icons-material/Search";
 import Tooltip from "@mui/material/Tooltip";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -33,22 +33,9 @@ export default function AppHeader() {
   };
 
   const navigate = useNavigate();
+  const location = useLocation()
 
-  useEffect(() => {
-    authService.listenForAuthChange({
-      login(param) {
-        dispatch(setAuth(param));
-        dispatch(setLoggedIn(true));
-        dispatch(getContacts(param.uid));
-        dispatch(getLabels(param.uid));
-        navigate("/");
-      },
-      logout: () => {
-        dispatch(setLoggedIn(false));
-        navigate("/LogInPage");
-      },
-    });
-  }, []);
+ 
   useEffect(() => {
     document
       .querySelector("body")

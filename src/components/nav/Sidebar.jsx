@@ -70,9 +70,12 @@ export function Sidebar(props) {
   const handleLogout = async () => {
     await authService.logout();
   };
+  const user = useSelector((state)=> state.authentication.user)
   const handleLabelSubmit = () => {
-    const newLabel = { id: new Date().getTime().toString(), title: label };
-    dispatch(addLabel(newLabel));
+    const newLabel = { id: docRef.id, title: label };
+    labelService.saveLabel(newLabel, user.uid);
+    // dispatch(addLabel(newLabel));
+    dispatch(getLabels( user.uid));
     setOpenLabel(false);
     setLabel("")
   };
@@ -115,6 +118,7 @@ export function Sidebar(props) {
   };
 
   const handleChange = (event) => {
+    
     setAge(event.target.value);
   };
 
@@ -248,6 +252,7 @@ export function Sidebar(props) {
                       return (
                         <NavLink
                           to={`/labels/${item.id}`}
+                          key={id}
                           className={({ isActive }) =>
                             `${
                               isActive ? "text-blue-400" : "text-black-400"
@@ -500,17 +505,17 @@ export function Sidebar(props) {
                             >
                               <MenuItem value={1}>
                                 {" "}
-                                Contacts ({contactService.getContacts().length})
+                                Contacts ({contacts.length})
                               </MenuItem>
                               <MenuItem value={10}>
                                 Frequently contacted (
-                                {contactService.getContacts().length} )
+                                {contacts.length} )
                               </MenuItem>
                               <hr />
                               <p className="opacity-50 pl-5 pt-5">Labels</p>
                               <MenuItem value={20}>
                                 My Contacts (
-                                {contactService.getContacts().length} ){" "}
+                                {contacts.length} ){" "}
                               </MenuItem>
                             </Select>
                           </FormControl>
@@ -584,16 +589,16 @@ export function Sidebar(props) {
                         >
                           <MenuItem value={1}>
                             {" "}
-                            Contacts ({contactService.getContacts().length})
+                            Contacts ({contacts.length})
                           </MenuItem>
                           <MenuItem value={10}>
                             Frequently contacted (
-                            {contactService.getContacts().length} )
+                            {contacts.length} )
                           </MenuItem>
                           <hr />
                           <p className="opacity-50 pl-5 pt-5">Labels</p>
                           <MenuItem value={20}>
-                            My Contacts ({contactService.getContacts().length} ){" "}
+                            My Contacts ({contacts.length} ){" "}
                           </MenuItem>
                         </Select>
                       </FormControl>
@@ -614,12 +619,6 @@ export function Sidebar(props) {
                 className="col-span-3 min-w-full bg-none block md:hidden"
                 onClick={() => context.toggleSidebar(false)}
               ></section>
-              <div>
-                <button onClick={() => dispatch(incrementByAmount(56))}>
-                  +
-                </button>
-                <button onClick={() => dispatch(decrement())}>-</button>
-              </div>
             </div>
           ) : (
             <div className="py-8 col-span-7 md:col-span-10">Please Log IN</div>

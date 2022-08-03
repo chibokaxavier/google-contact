@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import { collection, addDoc, getDocs,getDoc, doc } from "firebase/firestore";
 import { db } from "../firebase/index";
 import { faker } from "@faker-js/faker";
 class ContactService {
@@ -27,9 +27,21 @@ class ContactService {
       console.error("Error adding document: ", e);
     }
   }
-  // getContact(id) {
-  //   return contacts.find((contact) => contact.id === id);
-  // }
+  async getContact(uid, id) {
+    let contact = null;
+    const docRef = doc(db, "users", uid, "contacts", id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      contact = docSnap.data();
+    } else {
+      // doc.data() will be undefined in this case
+      console.log("No such document!");
+    }
+    return contact;
+
+    //
+    //
+  }
 }
 let contactService = new ContactService();
 export { contactService };
