@@ -16,7 +16,12 @@ import Input from "@mui/material/Input";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink } from "react-router-dom";
 import { getContacts } from "../store/slices/contacts.slice";
+import { getLabels } from "../store/slices/label.slice";
 import { open, setMessage } from "../store/slices/snackbar.slice";
+import { labelService } from "../services/labels.service";
+// import { getLabels } from "../store/slices/label.slice";
+
+
 // import OutlinedInput from "@mui/material/OutlinedInput";
 // import InputLabel from "@mui/material/InputLabel";
 // import MenuItem from "@mui/material/MenuItem";
@@ -87,6 +92,18 @@ function Createcontact() {
       notes: "",
     });
   };
+  const [openLabel, setOpenLabel] = useState(false);
+  const [label, setLabel] = useState("");
+  const [CreateLabelopen, setCreateLabelOpen] = React.useState(false);
+
+  const handleLabelSubmit = () => {
+    const newLabel = { id: docRef.id, title: label };
+    labelService.saveLabel(newLabel, user.uid);
+    // dispatch(addLabel(newLabel));
+    dispatch(getLabels(user.uid));
+    setOpenLabel(false);
+    setLabel("");
+  };
   const selectFile = (event) => {
     if (event.target.files && event.target.files[0]) {
       var imageFile = event.target.files[0];
@@ -130,7 +147,13 @@ function Createcontact() {
       notes: "",
     });
   };
-  const closeNew = () => {};
+  const handleCreateLabelOpen = () => {
+    setCreateLabelOpen(true);
+  };
+  const handleCreateLabelClose = () => {
+    setCreateLabelOpen(false);
+  };
+
   const handleChange = (event) => {
     setNewContact({
       ...newContact,
@@ -153,12 +176,10 @@ function Createcontact() {
   };
   return (
     <>
-      <div className="pt-5 cursor-pointer " onClick={closeNew}>
-        X
-      </div>
+      <div className="pt-5 cursor-pointer ">X</div>
       <div className="ml-10 ">
-        <div className="mb-30">
-          <div className="flex relative">
+        <div className="mb-30 fixed z-50  border-b-2 w-[90%] bg-white top-[80px]">
+          <div className="flex relative mt-0">
             {/* <AccountCircleOutlinedIcon className="h-40 w-40" /> */}
             <img
               ref={imageRef}
@@ -186,9 +207,14 @@ function Createcontact() {
               </svg>
             </div>
             <div className="ml-10 flex">
-            {appliedLabels.map((lab) => (
-              <div key={lab.id} className="mt-24 ml-2 rounded-[12px] h-7 px-2  border border-gray-400 cursor-pointer">{lab.name}</div>
-            ))}
+              {appliedLabels.map((lab) => (
+                <div
+                  key={lab.id}
+                  className="mt-24 ml-2 rounded-[12px] h-7 px-2  border border-gray-400 cursor-pointer"
+                >
+                  {lab.name}
+                </div>
+              ))}
             </div>
             <svg
               width="20"
@@ -200,7 +226,6 @@ function Createcontact() {
               <path fill="white" d="M0 0h24v24H0V0z"></path>
               <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"></path>
             </svg>
-           
           </div>
           <button
             className="bg-blue-500 text-white h-8 w-20 ml-[900px] mb-7 rounded-md"
@@ -209,8 +234,7 @@ function Createcontact() {
             Save
           </button>
         </div>
-        <hr />
-        <form action="">
+        <form action="" className="mt-[23%]">
           <div className="mt-10">
             <div className="flex">
               <PermIdentityIcon className="opacity-60 mt-6 mr-8 pr-1" />{" "}
@@ -396,7 +420,9 @@ function Createcontact() {
       >
         <Box sx={{ ...style, width: 300, height: 300, pt: 2 }}>
           <h2 id="parent-modal-title"></h2>
-          <p id="parent-modal-description" className="pl-7 pb-5 text-sm">Manage Labels</p>
+          <p id="parent-modal-description" className="pl-7 pb-5 text-sm">
+            Manage Labels
+          </p>
           {labelList.map((item) => {
             const { name, id } = item;
             return (
@@ -453,11 +479,48 @@ function Createcontact() {
               }}
               className="cursor-pointer"
             >
-            <span className="ml-7 pt-4">Apply</span>  
+              <span className="ml-7 pt-4">Apply</span>
             </div>
           ) : (
-            <div className="cursor-pointer" > <span className="ml-7 pt-4 h-10 w-10">+</span><span className="ml-7 pt-4">Create Label</span> </div>
+            <div className="cursor-pointer" onClick={handleCreateLabelOpen}>
+              {" "}
+              <span className="ml-7 pt-4 h-10 w-10">+</span>
+              <span className="ml-7 pt-4">Create Label</span>{" "}
+            </div>
           )}
+        </Box>
+      </Modal>
+      <Modal
+        open={CreateLabelopen}
+        onClose={handleCreateLabelClose}
+        aria-labelledby="parent-modal-title"
+        aria-describedby="parent-modal-description"
+      >
+        <Box sx={{ ...style, width: 380, height: 200, pt: 2 }}>
+          <h2 id="parent-modal-title"></h2>
+          <p id="parent-modal-description" className="pl-5">
+            Create Label
+          </p>
+          <Input
+            placeholder=""
+            className="mt-8 ml-9 w-[300px]"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+          />
+          <div className="flex justify-end text-blue-500 mt-10">
+            <button
+              onClick={handleCreateLabelClose}
+              className=" mr-3 bg-white w-[70px] h-8 rounded  text-sm font-semibold hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleLabelSubmit}
+              className=" mr-4 bg-white w-16 h-8 rounded  text-sm font-semibold hover:bg-gray-100"
+            >
+              Save
+            </button>
+          </div>
         </Box>
       </Modal>
       ;

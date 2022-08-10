@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
+import { fileService } from "../../services/file.service";
 import { SidebarContext } from "../../context/Sidebar";
 import { contactService } from "../../services/contacts.service";
 import PermIdentityIcon from "@mui/icons-material/PermIdentity";
@@ -9,6 +10,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { NavLink } from "react-router-dom";
@@ -53,6 +55,7 @@ export function Sidebar(props) {
   const contacts = useSelector((state) => state.contacts.value);
   const context = useContext(SidebarContext);
   const [openModal, SetOpenModal] = useState(false);
+  const [activeLabel, setActiveLabel] = useState({});
   const [goLeft, setGoLeft] = useState(false);
   const [Importopen, setImportOpen] = React.useState(false);
   const [CreateLabelopen, setCreateLabelOpen] = React.useState(false);
@@ -61,23 +64,34 @@ export function Sidebar(props) {
   const dispatch = useDispatch();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
-  const [age, setAge] = React.useState("");
   const [openLabel, setOpenLabel] = useState(false);
   const inputFileRef = useRef();
   const [label, setLabel] = useState("");
+  const [delLabels, setDelLabels] = useState([]);
   const labelList = useSelector((state) => state.labelList.value);
   const logged_in = useSelector((state) => state.authentication.logged_in);
+  const [editLabel, setEditLabel] = useState(false);
+  const [Labelopen, setLabelOpen] = React.useState(false);
+  const [selectedLabels, setSelectedLabels] = useState([]);
+  const [appliedLabels, setAppliedLabels] = useState([]);
+  const [isHovering, setIsHovering] = useState(false);
+  const uid = useSelector((state) => state.authentication.user.uid);
+  const user = useSelector((state) => state.authentication.user);
+  const [exportType, setExportType] = useState("all_contacts");
+  const [printType, setPrintType] = useState("all_contacts");
+
+
   const handleLogout = async () => {
     await authService.logout();
   };
-  const user = useSelector((state)=> state.authentication.user)
   const handleLabelSubmit = () => {
-    const newLabel = { id: docRef.id, title: label };
+    const newLabel = { title: label };
     labelService.saveLabel(newLabel, user.uid);
     // dispatch(addLabel(newLabel));
-    dispatch(getLabels( user.uid));
+    dispatch(getLabels(user.uid));
     setOpenLabel(false);
-    setLabel("")
+    setLabel("");
+    handleCreateLabelClose();
   };
 
   const handleLabel = () => {
@@ -116,10 +130,111 @@ export function Sidebar(props) {
   const handleCreateLabelClose = () => {
     setCreateLabelOpen(false);
   };
+  const editLabelOpen = (label) => {
+    setActiveLabel(label);
+    setEditLabel(true);
+  };
+  const editLabelClose = () => {
+    setEditLabel(false);
+  };
 
-  const handleChange = (event) => {
-    
-    setAge(event.target.value);
+  const handleEditLabel = async (label_id, new_name) => {
+    await labelService.updateLabel(label_id, new_name, uid);
+  };
+
+  const exportChange = (event) => {
+    setExportType(event.target.value);
+    console.log(event.target.value);
+  };
+  const printChange = (event) => {
+    setPrintType(event.target.value);
+    console.log(event.target.value);
+  };
+
+  const handleLabelOpen = () => {
+    setLabelOpen(true);
+  };
+
+  const handleLabelClose = () => {
+    setLabelOpen(false);
+  };
+  const manageLabels = (id) => {
+    let label_exists = selectedLabels.includes(id);
+    if (label_exists) {
+      // del label
+      setSelectedLabels(selectedLabels.filter((x) => x != id));
+      return;
+    }
+    setSelectedLabels([...selectedLabels, id]);
+  };
+  const applyLabels = () => {
+    setAppliedLabels(
+      selectedLabels.map((x) => labelList.find((label) => label.id == x))
+    );
+  };
+  const handleMouseOver = () => {
+    setIsHovering(true);
+  };
+  const handleMouseOut = () => {
+    setIsHovering(false);
+  };
+
+  const deleteLabel = async (id) => {
+    await contactService.delLabel(uid, id);
+    setDelLabels(labelList.filter((contact) => contact.id !== id));
+    console.log("i received the  delete label click");
+    // dispatch(setMessage("Contact Deleted Sucessfully"));
+  };
+  const handleSubmitExport = () => {
+    let contact_content;
+    handleExportClose();
+    switch (exportType) {
+      case "all_contacts":
+        contact_content = contacts;
+        console.log("printing all contacts");
+        fileService.exportToCSV(contact_content, "exported-contacts.csv");
+        break;
+      default:
+        contact_content = contacts.filter((person) => {
+          let labels = person.labels || [];
+          return labels.includes(exportType);
+        });
+        console.log("printing all contacts with this label");
+        fileService.exportToCSV(contact_content, "exported-contacts.csv");
+    }
+  };
+  const handlePrint = () => {
+    let contact_content;
+    handlePrintClose();
+    switch (printType) {
+      case "all_contacts":
+        contact_content = contacts;
+        console.log("printing all contacts");
+        fileService.printAsPdf(contact_content);
+        break;
+      default:
+        contact_content = contacts.filter((person) => {
+          let labels = person.labels || [];
+          return labels.includes(printType);
+        });
+        console.log("printing all contacts with this label");
+        fileService.printAsPdf(contact_content);
+    }
+  };
+  const selectInputFile = () => {
+    handleImportClose();
+    let file = inputFileRef.current.files[0];
+    if (inputFileRef.current.files && inputFileRef.current.files[0]) {
+      var csvFile = inputFileRef.current.files[0];
+      var reader = new FileReader();
+      reader.onload = async function (e) {
+        // parse this text to json
+        // foreach record, create in firebase
+        let json = fileService.exportToJSON(e.target.result);
+        await contactService.saveMany(json,uid)
+      };
+      reader.readAsText(csvFile);
+    }
   };
 
   return (
@@ -193,7 +308,7 @@ export function Sidebar(props) {
                   {/* </Tooltip> */}
                 </div>
 
-                <div className="">
+                <div>
                   <div className="mt-8 ml-6">
                     <div className="pb-4">
                       <NavLink
@@ -247,37 +362,75 @@ export function Sidebar(props) {
 
                       <span className="text-sm pl-6  ">Labels</span>
                     </div>
-                    {labelList.map((item) => {
-                      const { name, id } = item;
-                      return (
-                        <NavLink
-                          to={`/labels/${item.id}`}
-                          key={id}
-                          className={({ isActive }) =>
-                            `${
-                              isActive ? "text-blue-400" : "text-black-400"
-                            } transition-all duration-1000`
-                          }
-                        >
-                          <div className=" mb-4 flex cursor-pointer" key={id}>
-                            <div className="flex">
-                              <div>
-                                <svg
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 24 24"
-                                  className="ml-1 opacity-70"
-                                >
-                                  <path fill="none" d="M0 0h24v24H0V0z"></path>
-                                  <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"></path>
-                                </svg>
+                    <div>
+                      {labelList.map((item) => {
+                        const { name, id } = item;
+                        return (
+                          <NavLink
+                            to={`/labels/${item.id}`}
+                            key={id}
+                            className={({ isActive }) =>
+                              `${
+                                isActive
+                                  ? "text-blue-400 hover:bg-blue-400"
+                                  : "text-black-400 hover:bg-gray-400"
+                              } transition-all duration-1000`
+                            }
+                          >
+                            {openLabel ? (
+                              <div
+                                className=" mb-4 flex cursor-pointer hover:bg-gray-200"
+                                key={id}
+                                onMouseOver={handleMouseOver}
+                                onMouseOut={handleMouseOut}
+                              >
+                                <div className="flex">
+                                  <div>
+                                    <svg
+                                      width="20"
+                                      height="20"
+                                      viewBox="0 0 24 24"
+                                      className="ml-1 opacity-70"
+                                    >
+                                      <path
+                                        fill="none"
+                                        d="M0 0h24v24H0V0z"
+                                      ></path>
+                                      <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"></path>
+                                    </svg>
+                                  </div>
+
+                                  <div className="ml-7">{name} </div>
+                                  {isHovering && (
+                                    <div>
+                                      {labelList.map((label) => {
+                                        const { id } = item;
+                                        return (
+                                          <div className="absolute right-3 z-50">
+                                            <EditIcon
+                                              className="z-50 opacity-50"
+                                              onClick={() =>
+                                                editLabelOpen(label)
+                                              }
+                                            />
+                                            <DeleteOutlineIcon
+                                              className="z-50"
+                                              onClick={() => deleteLabel(id)}
+                                            />
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                                <div className="ml-7">{name}</div>
-                            </div>
-                          </div>
-                        </NavLink>
-                      );
-                    })}
+                            ) : (
+                              <></>
+                            )}
+                          </NavLink>
+                        );
+                      })}
+                    </div>
                     {openLabel ? (
                       <div
                         className="pb-4 cursor-pointer"
@@ -345,15 +498,7 @@ export function Sidebar(props) {
                 </div>
 
                 <button onClick={handleLogout}>
-                  <div
-                    className={({ isActive }) =>
-                      `${
-                        isActive ? "text-blue-400" : "text-black-400"
-                      } transition-all duration-1000`
-                    }
-                  >
-                    Log out
-                  </div>
+                  <div className="text-red-400">Log out</div>
                 </button>
               </section>
               {/* import  modal */}
@@ -372,7 +517,10 @@ export function Sidebar(props) {
                     >
                       Import contacts
                     </p>
-                    <div className="flex border-2 ml-8 rounded-[25px] w-[120px] pl-4 h-[32px] pt-[2px] cursor-pointer hover:bg-gray-100">
+                    <div
+                      onClick={handleLabelOpen}
+                      className="flex border-2 ml-8 rounded-[25px] w-[120px] pl-4 h-[32px] pt-[2px] cursor-pointer hover:bg-gray-100"
+                    >
                       <svg
                         width="20"
                         height="20"
@@ -382,7 +530,11 @@ export function Sidebar(props) {
                         <path fill="none" d="M0 0h24v24H0V0z"></path>
                         <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"></path>
                       </svg>
-                      <p>No Label</p>
+                      <div>
+                        {appliedLabels.map((lab) => (
+                          <p key={lab.id}>{lab.name}</p>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -406,7 +558,9 @@ export function Sidebar(props) {
                       className="mt-5"
                       hidden
                       ref={inputFileRef}
+                      onChange={selectInputFile}
                     />
+                    {/* {inputFileRef.current.value && inputFileRef.current.value.split(/(\\|\/)/g).pop()} */}
                   </label>
                   <p className="mt-5 text-sm">
                     No CSV or vCard file?{" "}
@@ -416,12 +570,48 @@ export function Sidebar(props) {
                     instead.
                   </p>
                   <div className="flex justify-end text-blue-500 mt-4 mr-5">
-                    <button className=" mr-3 bg-white w-[70px] h-8 rounded  text-sm font-normal hover:bg-gray-100">
+                    <button
+                      onClick={handleImportClose}
+                      className=" mr-3 bg-white w-[70px] h-8 rounded  text-sm font-normal hover:bg-gray-100"
+                    >
                       Cancel
                     </button>
                     <button className=" mr-4 bg-white w-16 h-8 rounded text-gray-200 text-sm font-normal hover:bg-gray-100">
                       Import
                     </button>
+                  </div>
+                </Box>
+              </Modal>
+              {/* edit label modal */}
+              <Modal
+                open={editLabel}
+                onClose={editLabelClose}
+                aria-labelledby="parent-modal-title"
+                aria-describedby="parent-modal-description"
+              >
+                <Box sx={{ ...style, width: 350, height: 210, pt: 4, pl: 3 }}>
+                  <p>Rename Label</p>
+                  <Input
+                    placeholder={label}
+                    className="mt-8  w-[300px]"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                  />
+                  <div className="mt-16 pl-[] flex justify-end mr-10">
+                    <button
+                      onClick={editLabelClose}
+                      className="mr-5 hover:bg-gray-100 p-2 rounded-md text-blue-300"
+                    >
+                      Cancel
+                    </button>
+                    <div>
+                      <button
+                        onClick={() => handleEditLabel(activeLabel.id, label)}
+                        className="hover:bg-gray-100 p-2 rounded-md text-blue-300"
+                      >
+                        Save
+                      </button>
+                    </div>
                   </div>
                 </Box>
               </Modal>
@@ -499,24 +689,25 @@ export function Sidebar(props) {
                             <Select
                               // labelId="demo-simple-select-standard-label"
                               // id="demo-simple-select-standard"
-                              //  value={}
-                              onChange={handleChange}
+                              value={exportType}
+                              onChange={exportChange}
                               label="Age"
                             >
-                              <MenuItem value={1}>
-                                {" "}
+                              <MenuItem value={"all_contacts"}>
                                 Contacts ({contacts.length})
                               </MenuItem>
-                              <MenuItem value={10}>
-                                Frequently contacted (
-                                {contacts.length} )
-                              </MenuItem>
+
                               <hr />
                               <p className="opacity-50 pl-5 pt-5">Labels</p>
-                              <MenuItem value={20}>
-                                My Contacts (
-                                {contacts.length} ){" "}
-                              </MenuItem>
+
+                              {labelList.map((onelabel) => {
+                                const { id, name } = onelabel;
+                                return (
+                                  <MenuItem value={onelabel.id}>
+                                    <div>{name}</div>
+                                  </MenuItem>
+                                );
+                              })}
                             </Select>
                           </FormControl>
                         </div>
@@ -538,10 +729,16 @@ export function Sidebar(props) {
                     </div>
                   </div>
                   <div className="flex justify-end text-blue-400 mt-10">
-                    <button className=" mr-3 bg-white w-[70px] h-8 rounded  text-sm font-medium hover:bg-gray-100">
+                    <button
+                      onClick={handleExportClose}
+                      className=" mr-3 bg-white w-[70px] h-8 rounded  text-sm font-medium hover:bg-gray-100"
+                    >
                       Cancel
                     </button>
-                    <button className=" mr-4 bg-white w-16 h-8 rounded  text-sm font-medium hover:bg-gray-100">
+                    <button
+                      onClick={handleSubmitExport}
+                      className=" mr-4 bg-white w-16 h-8 rounded  text-sm font-medium hover:bg-gray-100"
+                    >
                       Export
                     </button>
                   </div>
@@ -584,34 +781,122 @@ export function Sidebar(props) {
                           // labelId="demo-simple-select-standard-label"
                           // id="demo-simple-select-standard"
                           //  value={}
-                          onChange={handleChange}
+                          value={printType}
+                              onChange={printChange}
                           label="Age"
                         >
-                          <MenuItem value={1}>
-                            {" "}
+                          <MenuItem value={"all_contacts"}>
                             Contacts ({contacts.length})
                           </MenuItem>
-                          <MenuItem value={10}>
-                            Frequently contacted (
-                            {contacts.length} )
-                          </MenuItem>
+                          
+                          
                           <hr />
                           <p className="opacity-50 pl-5 pt-5">Labels</p>
-                          <MenuItem value={20}>
-                            My Contacts ({contacts.length} ){" "}
+                          {labelList.map((oneprintlabel)=>{
+                            const {id,name}=oneprintlabel
+                            return(   
+                            <MenuItem value={oneprintlabel.id}>
+                            {name}
                           </MenuItem>
+                            )
+                          })}
                         </Select>
                       </FormControl>
                     </div>
                   </div>
                   <div className="flex justify-end text-blue-500 mt-10">
-                    <button className=" mr-3 bg-white w-[70px] h-8 rounded  text-sm font-semibold hover:bg-gray-100">
+                    <button
+                      onClick={handlePrintClose}
+                      className=" mr-3 bg-white w-[70px] h-8 rounded  text-sm font-semibold hover:bg-gray-100"
+                    >
                       Cancel
                     </button>
-                    <button className=" mr-4 bg-white w-16 h-8 rounded  text-sm font-semibold hover:bg-gray-100">
+                    <button  onClick={handlePrint} className=" mr-4 bg-white w-16 h-8 rounded  text-sm font-semibold hover:bg-gray-100">
                       Print
                     </button>
                   </div>
+                </Box>
+              </Modal>
+
+              <Modal
+                open={Labelopen}
+                onClose={handleLabelClose}
+                aria-labelledby="parent-modal-title"
+                aria-describedby="parent-modal-description"
+              >
+                <Box sx={{ ...style, width: 300, height: 300, pt: 2 }}>
+                  <h2 id="parent-modal-title"></h2>
+                  <p
+                    id="parent-modal-description"
+                    className="pl-7 pb-5 text-sm"
+                  >
+                    Manage Labels
+                  </p>
+                  {labelList.map((item) => {
+                    const { name, id } = item;
+                    return (
+                      <div className=" mb-4 flex cursor-pointer ml-5" key={id}>
+                        {/* <NavLink
+                  to={`/labels/${item.id}`}
+                  className={({ isActive }) =>
+                    `${
+                      isActive ? "text-blue-400" : "text-black-400"
+                    } transition-all duration-1000`
+                  }
+                > */}
+                        <div className="flex" onClick={() => manageLabels(id)}>
+                          <div>
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              className="ml-1 opacity-70"
+                            >
+                              <path fill="none" d="M0 0h24v24H0V0z"></path>
+                              <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"></path>
+                            </svg>
+                          </div>
+
+                          <div className="ml-7">{name}</div>
+                          {selectedLabels.includes(id) && (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-6 w-6 stroke-blue-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        {/* </NavLink> */}
+                      </div>
+                    );
+                  })}
+                  <hr />
+                  {selectedLabels.length != appliedLabels.length ? (
+                    <div
+                      onClick={() => {
+                        applyLabels();
+                        handleLabelClose();
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <span className="ml-7 pt-4">Apply</span>
+                    </div>
+                  ) : (
+                    <div className="cursor-pointer">
+                      {" "}
+                      <span className="ml-7 pt-4 h-10 w-10">+</span>
+                      <span className="ml-7 pt-4">Create Label</span>{" "}
+                    </div>
+                  )}
                 </Box>
               </Modal>
 

@@ -2,13 +2,20 @@ import React from "react";
 import { contactService } from "../services/contacts.service";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
-
+import { useState } from "react";
+import { useDispatch } from "react-redux/es/exports";
+import { clearTrash } from "../store/slices/contacts.slice";
 
 export function Trash() {
-  const contacts = useSelector((state) => state.contacts.value);
+  let trashContacts = useSelector((state) => state.contacts.trash);
+  let user = useSelector((state) => state.authentication.user);
   const d = new Date();
+  const dispatch = useDispatch();
 
-
+  const emptyTrash = async () => {
+    await contactService.clearTrash(user.uid, trashContacts);
+    dispatch(clearTrash());
+  }; 
   return (
     <>
       <div className="w-[99%] h-[55px] bg-gray-100 pl-0 rounded-lg flex justify-center text-sm">
@@ -17,7 +24,14 @@ export function Trash() {
           Contacts that have been in Trash more than 30 days will be deleted
           forever
         </p>
-        <button className="mt-[14px] text-blue-500 hover:bg-gray-200 rounded px-4 h-9 ">Empty Trash Now</button>
+        <button
+          onClick={async () => {
+            await emptyTrash();
+          }}
+          className="mt-[14px] text-blue-500 hover:bg-gray-200 rounded px-4 h-9 "
+        >
+          Empty Trash Now
+        </button>
       </div>
       <div className="text-sm bg-white pl-5">
         <div className=" ">
@@ -29,17 +43,16 @@ export function Trash() {
 
           <div className="">
             <div className="text-[11px] mt-5 mb-3">
-              <span className="text-[11px]">TRASH</span> (
-              {contacts.length})
+              <span className="text-[11px]">TRASH</span> ({trashContacts.length}
+              )
             </div>
 
-            {contacts.map((contact) => (
+            {trashContacts.map((contact) => (
               <div
                 key={contact.id}
                 className="py-3 gap-6  grid grid-cols-3 hover:bg-gray-200  relative"
               >
                 <div className="flex gap-2">
-                  <img src={contact.image} className="w-10 h-10 rounded-full" />
                   <div className="">{contact.firstName}</div>
                 </div>
                 <div>

@@ -19,7 +19,7 @@ import Createcontact from "./pages/createContact";
 import OneLabel from "./pages/oneLabel";
 import ManageLabels from "./components/manageLabels";
 import SimpleSnackbar from "./components/feedback/MobileSnackbar";
-import LogInPage from "./pages/logInPage";
+import LogInPage from "./pages/logIn";
 import Merge from "./pages/merge";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { setAuth } from "./store/slices/auth.slice";
@@ -32,15 +32,15 @@ import { setLoggedIn } from "./store/slices/auth.slice";
 function Wrapper({ children }) {
   let dispatch = useDispatch();
   let logged_in = useSelector((state) => state.authentication.logged_in);
-  let auth = Cookies.get("auth");
-  if (auth) {
-    auth = JSON.parse(auth);
-    dispatch(setAuth(auth));
-    dispatch(getContacts(auth.uid));
-    dispatch(getLabels(auth.uid));
-  }
-
+  let [loaded, setLoaded] = useState(false);
   useEffect(() => {
+    let auth = Cookies.get("auth");
+    if (auth) {
+      auth = JSON.parse(auth);
+      dispatch(setAuth(auth));
+      dispatch(getContacts(auth.uid));
+      dispatch(getLabels(auth.uid));
+    }
     authService.listenForAuthChange({
       login(param) {
         if (!logged_in) {
@@ -58,8 +58,9 @@ function Wrapper({ children }) {
         navigate("/LogInPage");
       },
     });
-  }, []);
-  return children;
+    setLoaded(true);
+  }, [logged_in]);
+  return loaded && children;
 }
 function App() {
   const [isSidebarOpen, toggleSidebar] = useState(false);

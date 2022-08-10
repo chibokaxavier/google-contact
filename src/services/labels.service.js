@@ -1,4 +1,10 @@
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "../firebase/index";
 class LabelService {
   getLabel() {
@@ -19,6 +25,18 @@ class LabelService {
         name: label.title,
       });
       console.log("Document written with ID: ", docRef.id, label.title);
+    } catch (e) {
+      console.error("Error adding document: ", e);
+    }
+  }
+  async updateLabel(label_id, new_name, uid) {
+    console.log(label_id, new_name, uid);
+    try {
+      const docRef = doc(db, "users", uid, "labels", label_id);
+      updateDoc(docRef, {
+        name: new_name,
+      });
+      console.log("label titled updated");
     } catch (e) {
       console.error("Error adding document: ", e);
     }
